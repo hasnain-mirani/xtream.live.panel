@@ -131,6 +131,11 @@
   --sidebar-ring: oklch(0.556 0 0);
 }
 
+/* Marquee utility: linear infinite, duration controlled via --marquee-duration */
+
+@keyframes marquee { from { transform: translateX(0); } to { transform: translateX(-50%); } }
+
+
 @layer base {
   * {
     @apply border-border outline-ring/50;

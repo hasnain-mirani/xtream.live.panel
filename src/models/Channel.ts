@@ -1,22 +1,32 @@
-import { Schema, model, models } from "mongoose";
+import { Schema, models, model } from "mongoose";
+
+const ChannelSchema = new Schema(
+  {
+    name: { type: String, index: true },
+    url: { type: String },
+    logo: String,
+    tvgId: { type: String, index: true },
+    group: String,
+    country: { type: String, index: true },  // "US" | "UK" | etc
+    language: String,
+    provider: { type: String, index: true }, // "pluto"
+  },
+  { timestamps: true }
+);
+
+ChannelSchema.index({ provider: 1, tvgId: 1 }, { unique: false });
+ChannelSchema.index({ provider: 1, name: 1 });
 
 export type ChannelDoc = {
   _id: string;
-  key: string;           // unique id like "news-hd"
-  name: string;          // display name
-  url: string;           // HLS .m3u8
-  category?: string;     // e.g., "News", "Sports"
-  order?: number;        // sort priority
-  active: boolean;
+  name: string;
+  url: string;
+  logo?: string;
+  tvgId?: string;
+  group?: string;
+  country?: string;
+  language?: string;
+  provider: string;
 };
 
-const channelSchema = new Schema<ChannelDoc>({
-  key: { type: String, unique: true, required: true, trim: true },
-  name: { type: String, required: true, trim: true },
-  url:  { type: String, required: true },
-  category: { type: String, default: "" },
-  order: { type: Number, default: 0 },
-  active: { type: Boolean, default: true },
-}, { timestamps: true });
-
-export const Channel = models.Channel || model<ChannelDoc>("Channel", channelSchema);
+export default models.Channel || model("Channel", ChannelSchema);

@@ -1,33 +1,37 @@
-import { useEffect, useState } from "react";
-import { useRouter } from "next/router";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
+// pages/api/auth/reset.ts
+import type { NextApiRequest, NextApiResponse } from "next";
+import crypto from "crypto";
+import bcrypt from "bcryptjs";
+import { connectDB as dbConnect } from "@/lib/db";
+import User from "@/models/User";
 
-export default function Reset() {
-  const router = useRouter();
-  const [token, setToken] = useState("");
-  const [password, setPassword] = useState("");
-  const [msg, setMsg] = useState<string|null>(null);
+export default async function handler(req: NextApiRequest, res: NextApiResponse) {
+  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  useEffect(()=> setToken(String(router.query.token || "")), [router.query.token]);
+  const { email, token, password } = req.body || {};
+  if (!email || !token || !password) return res.status(400).json({ error: "Missing fields" });
+  if (String(password).length < 8) return res.status(400).json({ error: "Password too short" });
 
-  const submit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMsg(null);
-    const r = await fetch("/api/auth/reset", { method: "POST", headers: {"Content-Type":"application/json"}, body: JSON.stringify({ token, password }) });
-    if (r.ok) router.push("/auth/login"); else setMsg("Invalid/expired");
-  };
+  await dbConnect();
 
-  return (
-    <main className="max-w-md mx-auto my-10 space-y-4">
-      <h1 className="text-2xl font-bold">Reset Password</h1>
-      <form onSubmit={submit} className="space-y-3">
-        <div><Label htmlFor="token">Token</Label><Input id="token" value={token} onChange={(e)=>setToken(e.target.value)} required /></div>
-        <div><Label htmlFor="password">New Password</Label><Input id="password" type="password" value={password} onChange={(e)=>setPassword(e.target.value)} required /></div>
-        <Button className="rounded-2xl" type="submit">Reset</Button>
-        {msg && <p className="text-red-600 text-sm">{msg}</p>}
-      </form>
-    </main>
-  );
+  const user = await User.findOne({ email: String(email).toLowerCase() });
+  if (!user?.passwordResetTokenHash || !user.passwordResetExpiresAt) {
+    return res.status(400).json({ error: "Invalid or expired token" });
+  }
+  if (user.passwordResetExpiresAt.getTime() < Date.now()) {
+    return res.status(400).json({ error: "Token expired" });
+  }
+
+  const hash = crypto.createHash("sha256").update(String(token)).digest("hex");
+  if (hash !== user.passwordResetTokenHash) {
+    return res.status(400).json({ error: "Invalid token" });
+  }
+
+  // All good → update password & clear reset fields
+  user.passwordHash = await bcrypt.hash(String(password), 10);
+  user.passwordResetTokenHash = null;
+  user.passwordResetExpiresAt = null;
+  await user.save();
+
+  return res.status(200).json({ ok: true });
 }

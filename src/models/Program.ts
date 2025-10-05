@@ -1,20 +1,30 @@
-import { Schema, model, models } from "mongoose";
+import { Schema, models, model } from "mongoose";
+
+const ProgramSchema = new Schema(
+  {
+    channelTvgId: { type: String, index: true }, // match by tvgId
+    start: { type: Date, index: true },
+    stop: { type: Date, index: true },
+    title: String,
+    desc: String,
+    category: String,
+    provider: { type: String, index: true }, // "pluto"
+    country: { type: String, index: true },  // "US"/"UK"
+  },
+  { timestamps: true }
+);
+
+ProgramSchema.index({ provider: 1, country: 1, channelTvgId: 1, start: 1 });
 
 export type ProgramDoc = {
-  _id: string;
-  channelKey: string;
-  title: string;
+  channelTvgId: string;
   start: Date;
-  end: Date;
+  stop: Date;
+  title?: string;
+  desc?: string;
+  category?: string;
+  provider: string;
+  country?: string;
 };
 
-const schema = new Schema<ProgramDoc>({
-  channelKey: { type: String, index: true, required: true },
-  title: { type: String, required: true },
-  start: { type: Date, required: true },
-  end: { type: Date, required: true },
-}, { timestamps: true });
-
-schema.index({ channelKey: 1, start: 1 });
-
-export const Program = models.Program || model<ProgramDoc>("Program", schema);
+export default models.Program || model("Program", ProgramSchema);

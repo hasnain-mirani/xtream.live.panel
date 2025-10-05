@@ -32,7 +32,7 @@ export default function Hero() {
 
           <div className="mt-8 flex items-center gap-4">
             <Link
-              href="/auth/register?trial=1"
+              href="/register"
               className="inline-flex rounded-full bg-rose-500 hover:bg-rose-600 text-white font-semibold px-6 py-3"
             >
               GET STARTED NOW

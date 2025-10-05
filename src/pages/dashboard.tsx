@@ -1,207 +1,476 @@
-import Protected from "@/components/Protected";
-import TrialCountdown from "@/components/TrialCountdown";
+// pages/dashboard.tsx
+import Head from "next/head";
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Play, Clock, Crown } from "lucide-react";
-import Navbar from "@/components/site/Navbar";
+import { useState } from "react";
+import type { GetServerSideProps } from "next";
+import jwt from "jsonwebtoken";
+import { money, dateTime, dateOnly } from "@/lib/format";
 
-type CW = { channelKey: string; playhead: number; updatedAt: string };
-type Sub = { status: string; trialEndsAt?: string | null; currentPeriodEnd?: string | null };
+// If your DB helper is exported differently, adjust this import:
+import { connectDB as dbConnect } from "@/lib/db";
 
-export default function Dashboard() {
-  const [me, setMe] = useState<any>(null);
-  const [sub, setSub] = useState<Sub | null>(null);
-  const [cw, setCw] = useState<CW[]>([]);
-  const [msg, setMsg] = useState<string | null>(null);
-  const [err, setErr] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+import User from "@/models/User";
+import Invoice from "@/models/Invoice";
 
-  async function loadAll() {
-    setLoading(true);
-    setErr(null);
-    try {
-      const t = Date.now();
-      const [meR, subR, cwR] = await Promise.all([
-        fetch(`/api/auth/me?t=${t}`, { cache: "no-store" }),
-        fetch(`/api/subscription/me?t=${t}`, { cache: "no-store" }),
-        fetch(`/api/user/continue?t=${t}`, { cache: "no-store" }),
-      ]);
+/* ---------- JSON-serializable types ---------- */
+type InvoiceStatus = "PENDING" | "PAID" | "CANCELLED";
 
-      if (meR.status === 401) { setMe(null); } else if (meR.ok) { setMe((await meR.json()).user); }
+type ServerUser = {
+  id: string;
+  name: string | null;
+  email: string;
+  isActive: boolean;
+  serviceUsername: string | null;
+};
 
-      if (subR.ok) setSub(await subR.json());
-      else setSub(null);
+type ServerInvoice = {
+  id: string;
+  invoiceNo: string;
+  status: InvoiceStatus;
+  amount: number;
+  currency: string;
+  dueDate: string; // ISO
+  createdAt: string; // ISO
+};
 
-      if (cwR.ok) {
-        const j = await cwR.json().catch(() => ({}));
-        setCw(j.items || []);
-      } else setCw([]);
-    } catch (e: any) {
-      setErr("Failed to load dashboard data.");
-    } finally {
-      setLoading(false);
+type Props = {
+  user: ServerUser;
+  latestInvoice: ServerInvoice | null;
+};
+
+/* ---------- SSR ---------- */
+export const getServerSideProps: GetServerSideProps<Props> = async ({
+  req,
+}) => {
+  try {
+    await dbConnect();
+
+    const token = req.cookies?.token;
+    if (!token) {
+      return {
+        redirect: { destination: "/login?next=/dashboard", permanent: false },
+      };
     }
+
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as {
+      uid?: string;
+    };
+    if (!decoded?.uid) {
+      return {
+        redirect: { destination: "/login?next=/dashboard", permanent: false },
+      };
+    }
+
+    const uid = decoded.uid;
+    const u: any = await User.findById(uid).lean();
+    if (!u) {
+      return {
+        redirect: { destination: "/login?next=/dashboard", permanent: false },
+      };
+    }
+
+    const inv: any = await Invoice.findOne({ userId: uid })
+      .sort({ createdAt: -1 })
+      .lean();
+
+    const user: ServerUser = {
+      id: String(u._id),
+      name: u.name ?? null,
+      email: (u.email as string) || "",
+      isActive: Boolean(u.isActive),
+      serviceUsername: u.serviceUsername ?? null,
+    };
+
+    const latestInvoice: ServerInvoice | null = inv
+      ? {
+          id: String(inv._id),
+          invoiceNo: (inv.invoiceNo as string) || "",
+          status: (inv.status as InvoiceStatus) || "PENDING",
+          amount: Number(inv.amount ?? 0),
+          currency: (inv.currency as string) || "GBP",
+          dueDate: inv.dueDate
+            ? new Date(inv.dueDate).toISOString()
+            : new Date().toISOString(),
+          createdAt: inv.createdAt
+            ? new Date(inv.createdAt).toISOString()
+            : new Date().toISOString(),
+        }
+      : null;
+
+    return { props: { user, latestInvoice } };
+  } catch {
+    return {
+      redirect: { destination: "/login?next=/dashboard", permanent: false },
+    };
   }
+};
 
-  useEffect(() => { loadAll(); }, []);
+/* ---------- Page ---------- */
+export default function Dashboard({ user, latestInvoice }: Props) {
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  const startTrial = async () => {
-    setMsg(null);
-    setErr(null);
-    try {
-      const r = await fetch("/api/trial/start", { method: "POST" });
-      const j = await r.json().catch(() => ({}));
-      if (!r.ok) {
-        // Common backend responses: { message: "Trial already used" } or similar
-        setErr(j.message || "Could not start trial.");
-        return;
-      }
-      setMsg("Trial started!");
-      // Some backends return the new sub in the body; still refetch to be safe
-      await loadAll();
-    } catch {
-      setErr("Could not start trial.");
-    }
-  };
-
-  const fmt = (sec: number) => `${Math.floor(sec / 60)}:${String(sec % 60).padStart(2, "0")}`;
-
-  const statusBadge = useMemo(() => {
-    const s = sub?.status || "none";
-    if (s === "active") return <Badge className="bg-emerald-600">Active</Badge>;
-    if (s === "trial") return <Badge className="bg-amber-600">Trial</Badge>;
-    if (s === "canceled") return <Badge variant="outline">Canceled</Badge>;
-    return <Badge variant="outline">None</Badge>;
-  }, [sub?.status]);
-
-  // Enable trial only if user has no active plan and is not already on trial
-  const canStartTrial = !sub || sub.status === "none";
+  const statusBadge = (s: InvoiceStatus) =>
+    s === "PAID"
+      ? "bg-green-100 text-green-800 border-green-200"
+      : s === "PENDING"
+      ? "bg-amber-100 text-amber-800 border-amber-200"
+      : "bg-red-100 text-red-800 border-red-200";
 
   return (
-    <Protected>
-      <Navbar />
-      <main className="bg-black text-white min-h-screen">
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8 py-10 space-y-8">
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight">Dashboard</h1>
-              {me && (
-                <p className="text-white/70 mt-1">
-                  Welcome, <span className="font-semibold">{me.name}</span>{" "}
-                  <span className="opacity-70">({me.email})</span>
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-2">
-              <Link href="/watch">
-                <Button className="rounded-2xl">
-                  <Play className="w-4 h-4 mr-2" /> Watch Now
-                </Button>
-              </Link>
-              <Link href="/upgrade">
-                <Button variant="outline" className="rounded-2xl">
-                  <Crown className="w-4 h-4 mr-2" /> Upgrade
-                </Button>
-              </Link>
-            </div>
-          </div>
+    <>
+      <Head>
+        <title>Dashboard — XtrmIPTV</title>
+        <meta name="description" content="Your XtrmIPTV account dashboard." />
+      </Head>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <Card className="rounded-2xl border-white/10 bg-white/[0.02]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm text-white/80">Subscription</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center gap-2">
-                  <span className="text-white/70">Status:</span> {statusBadge}
+      {/* NAVBAR */}
+      <header className="sticky top-0 z-30 border-b bg-white/80 backdrop-blur">
+        <nav className="container mx-auto px-4 h-14 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <button
+              className="inline-flex lg:hidden rounded-md border px-2 py-1.5 text-sm"
+              onClick={() => setMobileOpen((s) => !s)}
+              aria-label="Toggle sidebar"
+            >
+              ☰
+            </button>
+            <Link
+              href="/"
+              className="flex items-center gap-2 font-extrabold tracking-tight"
+            >
+              <span className="inline-block h-6 w-6 rounded bg-black" />
+              XtrmIPTV
+            </Link>
+          </div>
+          <div className="hidden md:flex items-center gap-6 text-sm">
+            <Link href="/channels" className="hover:opacity-80">
+              Channels
+            </Link>
+            <Link href="/pricing" className="hover:opacity-80">
+              Pricing
+            </Link>
+            <Link href="/contact" className="hover:opacity-80">
+              Support
+            </Link>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="hidden sm:block text-sm text-gray-600">
+              {user.email}
+            </span>
+            <Link
+              href="/login"
+              className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+            >
+              Sign out
+            </Link>
+          </div>
+        </nav>
+      </header>
+
+      {/* SHELL */}
+      <div className="container mx-auto px-4">
+        <div className="grid grid-cols-1 lg:grid-cols-[240px,1fr] gap-6 py-6">
+          {/* SIDEBAR */}
+          <aside
+            className={`lg:sticky lg:top-16 lg:h-[calc(100vh-5rem)] lg:overflow-y-auto rounded-2xl border bg-white p-4 
+              ${mobileOpen ? "block" : "hidden"} lg:block`}
+          >
+            <div className="text-xs font-semibold uppercase text-gray-500 px-2">
+              Overview
+            </div>
+            <nav className="mt-2 space-y-1">
+              <SidebarLink href="/dashboard" label="Dashboard" active />
+              <SidebarLink href="/channels" label="Browse Channels" />
+              <SidebarLink href="/invoice/history" label="Invoices" />
+              <SidebarLink href="/account" label="Account Settings" />
+              <SidebarLink href="/support" label="Support" />
+            </nav>
+
+            <div className="mt-6 text-xs font-semibold uppercase text-gray-500 px-2">
+              Shortcuts
+            </div>
+            <div className="mt-2 space-y-2">
+              <Link
+                className="block rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
+                href="/invoice/new"
+              >
+                Create new invoice
+              </Link>
+              <Link
+                className="block rounded-xl border px-3 py-2 text-sm hover:bg-gray-50"
+                href="/installation"
+              >
+                Device setup guides
+              </Link>
+            </div>
+
+            <div className="mt-6 rounded-xl border bg-gradient-to-br from-gray-50 to-white p-4">
+              <div className="text-sm font-semibold">Need help?</div>
+              <p className="mt-1 text-xs text-gray-600">
+                Our team is here 24/7. Open a ticket and we’ll get back ASAP.
+              </p>
+              <Link
+                href="/contact"
+                className="mt-3 inline-block rounded-md bg-black px-3 py-1.5 text-xs font-medium text-white"
+              >
+                Contact support
+              </Link>
+            </div>
+          </aside>
+
+          {/* MAIN */}
+          <main className="pb-12">
+            {/* Greeting */}
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight">
+                  Welcome{user.name ? `, ${user.name}` : ""} 👋
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Manage your subscription, invoices, and device credentials.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/channels"
+                  className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+                >
+                  Explore Channels
+                </Link>
+                <Link
+                  href="/pricing"
+                  className="rounded-md bg-black px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
+                >
+                  Upgrade plan
+                </Link>
+              </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <StatCard
+                label="Account"
+                value={user.isActive ? "Active" : "Pending"}
+                tone={user.isActive ? "ok" : "warn"}
+              />
+              <StatCard label="Username" value={user.serviceUsername || "—"} />
+              <StatCard
+                label="Latest Invoice"
+                value={latestInvoice ? latestInvoice.invoiceNo : "—"}
+              />
+              <StatCard
+                label="Amount Due"
+                value={
+                  !latestInvoice
+                    ? "—"
+                    : latestInvoice.amount === 0
+                    ? "Free"
+                    : money(latestInvoice.amount, latestInvoice.currency)
+                }
+              />
+            </div>
+
+            {/* Panels */}
+            <div className="mt-6 grid gap-6 lg:grid-cols-3">
+              {/* Latest Invoice */}
+              <section className="lg:col-span-2 rounded-2xl border bg-white p-5">
+                <div className="flex items-center justify-between">
+                  <h2 className="text-lg font-semibold">Latest invoice</h2>
+                  {latestInvoice && (
+                    <span
+                      className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium ${statusBadge(
+                        latestInvoice.status
+                      )}`}
+                    >
+                      {latestInvoice.status}
+                    </span>
+                  )}
                 </div>
 
-                {sub?.status === "trial" && (
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4" />
-                    <span className="text-white/70">Trial left:</span>
-                    <TrialCountdown trialEndsAt={sub.trialEndsAt || undefined} />
-                  </div>
-                )}
+                {!latestInvoice ? (
+                  <p className="mt-4 text-sm text-gray-600">
+                    No invoice found.
+                  </p>
+                ) : (
+                  <>
+                    <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                      <InfoRow k="Invoice No" v={latestInvoice.invoiceNo} />
+                      <InfoRow
+                        k="Created"
+                        v={dateTime(latestInvoice.createdAt)}
+                      />
+                      <InfoRow k="Due" v={dateOnly(latestInvoice.dueDate)} />
 
-                {(!sub || sub.status === "none") && (
-                  <Alert className="bg-white/[0.03] border-white/10 text-white">
-                    <AlertDescription>
-                      You don’t have an active plan. Start a free 48h trial or upgrade any time.
-                    </AlertDescription>
-                  </Alert>
-                )}
+                      <InfoRow
+                        k="Total"
+                        v={
+                          latestInvoice.amount === 0
+                            ? "Free"
+                            : money(
+                                latestInvoice.amount,
+                                latestInvoice.currency
+                              )
+                        }
+                      />
+                    </div>
 
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    onClick={startTrial}
-                    className="rounded-2xl"
-                    variant="secondary"
-                    disabled={!canStartTrial}
-                    title={!canStartTrial ? "Trial unavailable while Trial/Active" : "Start Free Trial"}
+                    <div className="mt-5 flex flex-wrap gap-2">
+                      <Link
+                        href={`/invoice/${latestInvoice.id}`}
+                        className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+                      >
+                        View invoice
+                      </Link>
+                      <a
+                        href={`/api/invoices/${latestInvoice.id}/pdf`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+                      >
+                        Download PDF
+                      </a>
+                      <button
+                        className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50"
+                        onClick={async () => {
+                          await fetch(
+                            `/api/invoices/${latestInvoice.id}/email`,
+                            { method: "POST" }
+                          );
+                          alert("Invoice email sent");
+                        }}
+                      >
+                        Email invoice
+                      </button>
+                      {latestInvoice.amount > 0 &&
+                        latestInvoice.status === "PENDING" && (
+                          <div className="ml-auto text-sm text-amber-700">
+                            Bank details were emailed. Please include the
+                            invoice no. in your transfer.
+                          </div>
+                        )}
+                      {latestInvoice.amount === 0 && (
+                        <div className="ml-auto text-sm text-green-700">
+                          Free trial active — no payment required.
+                        </div>
+                      )}
+                    </div>
+                  </>
+                )}
+              </section>
+
+              {/* Quick Start / Help */}
+              <section className="rounded-2xl border bg-white p-5">
+                <h2 className="text-lg font-semibold">Quick start</h2>
+                <ol className="mt-3 space-y-2 text-sm list-decimal list-inside text-gray-700">
+                  <li>
+                    Install your IPTV app (Fire TV / Android / iOS / Smart TV).
+                  </li>
+                  <li>Enter the credentials from your activation email.</li>
+                  <li>
+                    Browse channels and enjoy. Need help? Contact support.
+                  </li>
+                </ol>
+
+                <div className="mt-4 grid gap-2">
+                  <Link
+                    href="/how-to-setup"
+                    className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
                   >
-                    Start Free Trial
-                  </Button>
-                  <Link href="/upgrade">
-                    <Button className="rounded-2xl" variant="outline">
-                      View Plans
-                    </Button>
+                    Setup guides
+                  </Link>
+                  <Link
+                    href="/support"
+                    className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+                  >
+                    Open support ticket
+                  </Link>
+                  <Link
+                    href="/account"
+                    className="rounded-md border px-3 py-2 text-sm hover:bg-gray-50"
+                  >
+                    Account settings
                   </Link>
                 </div>
+              </section>
+            </div>
 
-                {msg && <p className="text-emerald-400 text-sm">{msg}</p>}
-                {err && <p className="text-red-400 text-sm">{err}</p>}
-              </CardContent>
-            </Card>
-
-            <Card className="rounded-2xl border-white/10 bg-white/[0.02]">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm text-white/80">Quick Actions</CardTitle>
-              </CardHeader>
-              <CardContent className="grid gap-2 text-sm text-white/80">
-                <p>• Open the Watch page and try a channel.</p>
-                <p>• Your last position is saved for “Continue Watching”.</p>
-                <p>• Upgrade to unlock full channel list and VOD.</p>
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card className="rounded-2xl border-white/10 bg-white/[0.02]">
-            <CardHeader className="pb-3">
-              <CardTitle className="text-sm text-white/80">Continue Watching</CardTitle>
-            </CardHeader>
-            <CardContent>
-              {loading ? (
-                <p className="opacity-70 text-sm">Loading…</p>
-              ) : cw.length === 0 ? (
-                <p className="opacity-70 text-sm">No recent progress yet.</p>
-              ) : (
-                <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-                  {cw.map((i, n) => (
-                    <Link
-                      key={n}
-                      href={`/watch#${i.channelKey}`}
-                      className="block rounded-xl border border-white/10 bg-white/[0.02] p-4 hover:border-white/20 transition"
-                    >
-                      <div className="flex items-center justify-between">
-                        <div className="font-semibold">{i.channelKey}</div>
-                        <Badge variant="outline">{fmt(i.playhead)}</Badge>
-                      </div>
-                      <div className="text-xs text-white/60 mt-2">
-                        Updated {new Date(i.updatedAt).toLocaleString()}
-                      </div>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </CardContent>
-          </Card>
+            {/* Explore */}
+            <section className="mt-6 rounded-2xl border bg-white p-5">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold">Explore the catalog</h2>
+                <Link
+                  href="/channels"
+                  className="rounded-md bg-black px-3 py-1.5 text-sm font-medium text-white hover:opacity-90"
+                >
+                  Browse Channels
+                </Link>
+              </div>
+              <p className="mt-2 text-sm text-gray-600">
+                Sports, Movies, News, Kids, and more—updated frequently. Filter
+                by country/genre.
+              </p>
+            </section>
+          </main>
         </div>
-      </main>
-    </Protected>
+      </div>
+    </>
+  );
+}
+
+/* ---------- tiny UI helpers ---------- */
+function SidebarLink({
+  href,
+  label,
+  active = false,
+}: {
+  href: string;
+  label: string;
+  active?: boolean;
+}) {
+  return (
+    <Link
+      href={href}
+      className={`block rounded-xl px-3 py-2 text-sm ${
+        active ? "bg-black text-white" : "hover:bg-gray-50 border"
+      }`}
+    >
+      {label}
+    </Link>
+  );
+}
+
+function StatCard({
+  label,
+  value,
+  tone,
+}: {
+  label: string;
+  value: string | number;
+  tone?: "ok" | "warn" | "err";
+}) {
+  const ring =
+    tone === "ok"
+      ? "ring-green-100"
+      : tone === "warn"
+      ? "ring-amber-100"
+      : tone === "err"
+      ? "ring-red-100"
+      : "ring-gray-100";
+  return (
+    <div className={`rounded-2xl border bg-white p-4 ring-1 ${ring}`}>
+      <div className="text-xs uppercase tracking-wide text-gray-500">
+        {label}
+      </div>
+      <div className="mt-1 text-xl font-semibold">{value}</div>
+    </div>
+  );
+}
+
+function InfoRow({ k, v }: { k: string; v: string }) {
+  return (
+    <div className="rounded-xl border bg-gray-50 p-3">
+      <div className="text-xs uppercase text-gray-500">{k}</div>
+      <div className="text-sm font-medium">{v}</div>
+    </div>
   );
 }

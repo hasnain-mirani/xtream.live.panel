@@ -1,19 +1,23 @@
-// src/pages/installation.tsx
+import Head from "next/head";
+import InstallHero from "@/components/sections/InstallHero";
+import InstallTabs from "@/components/sections/InstallTabs";
+import InstallLongForm from "@/components/sections/InstallLongForm";
 import Navbar from "@/components/site/Navbar";
-export default function Installation() {
+import XtrmFooter from "@/components/layout/XtrmFooter";
+
+export default function InstallationPage() {
   return (
     <>
-      <Navbar />
-      <main className="bg-black text-white">
-        <div className="mx-auto max-w-5xl px-4 py-16">
-          <h1 className="text-3xl font-bold mb-6">Installation</h1>
-          <ul className="list-disc ml-6 space-y-2 opacity-90">
-            <li>Android / iOS player setup</li>
-            <li>Smart TV apps</li>
-            <li>m3u / Xtream codes login</li>
-          </ul>
-        </div>
-      </main>
+      <Head>
+        <title>Installation – XtrmIPTV</title>
+        <meta name="description" content="Install XtrmIPTV on Fire Stick, Android, Apple, Smart TV, MAG, Enigma2, PC/Mac. Step-by-step guide." />
+      </Head>
+<Navbar />
+      <InstallHero />
+      <InstallTabs />
+      {/* Keep or remove the long Fire Stick tutorial: */}
+      <InstallLongForm />
+      <XtrmFooter/>
     </>
   );
 }

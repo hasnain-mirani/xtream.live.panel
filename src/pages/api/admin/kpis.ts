@@ -1,7 +1,7 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { connectDB } from "@/lib/db";
 import { getUserFromReq } from "@/lib/jwt";
-import { User } from "@/models/User";
+import  User  from "@/models/User";
 import { Subscription } from "@/models/Subscription";
 import { Event } from "@/models/Event";
 

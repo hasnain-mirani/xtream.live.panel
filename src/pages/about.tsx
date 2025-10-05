@@ -1,15 +1,29 @@
-// src/pages/about.tsx
+import Head from "next/head";
+import AboutHero from "@/components/sections/AboutHero";
+import WhyChoose from "@/components/sections/WhyChoose";
+import Equipment from "@/components/sections/Equipment";
+import StatsStrip from "@/components/sections/StatsStrip";
+import HowItWorks from "@/components/sections/HowItWorks";
 import Navbar from "@/components/site/Navbar";
-export default function About() {
+import XtrmFooter from "@/components/layout/XtrmFooter";
+
+export default function AboutPage() {
   return (
     <>
-      <Navbar />
-      <main className="bg-black text-white">
-        <div className="mx-auto max-w-5xl px-4 py-16">
-          <h1 className="text-3xl font-bold mb-6">About Us</h1>
-          <p className="opacity-80">Short blurb about Xtream IPTV.</p>
-        </div>
-      </main>
+      <Head>
+        <title>About – XtrmIPTV</title>
+        <meta name="description" content="Learn about XtrmIPTV — premium IPTV on every device with instant activation, 24/7 support and stunning quality." />
+      </Head>
+<Navbar />
+
+    
+      <AboutHero />
+      <WhyChoose />
+      <Equipment />
+      <StatsStrip />
+      <HowItWorks />
+
+      <XtrmFooter />
     </>
   );
 }

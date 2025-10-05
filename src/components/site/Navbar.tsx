@@ -41,8 +41,8 @@ export default function Navbar() {
   </>
 ) : (
   <>
-    <Link href="/auth/login" className="btn btn-ghost">Login</Link>
-    <Link href="/auth/register?trial=1" className="btn btn-white">FREE TRIAL</Link>
+    <Link href="/register" className="btn btn-ghost">Login</Link>
+    <Link href="/register" className="btn btn-white">FREE TRIAL</Link>
   </>
 )}
 

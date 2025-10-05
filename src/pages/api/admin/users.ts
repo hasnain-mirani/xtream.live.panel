@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { connectDB } from "@/lib/db";
-import { User } from "@/models/User";
+import  User  from "@/models/User";
 import { Subscription } from "@/models/Subscription";
 import bcrypt from "bcryptjs";
 import jwt from "jsonwebtoken";

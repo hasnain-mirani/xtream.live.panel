@@ -1,16 +1,23 @@
-// src/pages/contact.tsx
+import Head from "next/head";
+import ContactHero from "@/components/sections/ContactHero";
+import ContactSection from "@/components/sections/ContactSection";
 import Navbar from "@/components/site/Navbar";
-export default function Contact() {
+import XtrmFooter from "@/components/layout/XtrmFooter";
+import ContactMap from "@/components/sections/ContactMap";
+
+export default function ContactPage() {
   return (
     <>
-      <Navbar />
-      <main className="bg-black text-white">
-        <div className="mx-auto max-w-5xl px-4 py-16">
-          <h1 className="text-3xl font-bold mb-6">Contact</h1>
-          <p className="opacity-80 mb-4">Email: support@yourdomain.com</p>
-          {/* Add a form later if you want */}
-        </div>
-      </main>
+      <Head>
+        <title>Contact – XtrmIPTV</title>
+        <meta name="description" content="Get in touch with XtrmIPTV support and sales. We're available 24/7." />
+      </Head>
+
+    <Navbar />
+      <ContactHero />
+      <ContactSection />
+       <ContactMap />
+      <XtrmFooter/>
     </>
   );
 }
