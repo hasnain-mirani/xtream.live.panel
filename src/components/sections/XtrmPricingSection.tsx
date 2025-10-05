@@ -3,13 +3,15 @@
 import { motion } from "framer-motion";
 import { Check } from "lucide-react";
 import Link from "next/link";
+import { useRouter } from "next/router";
+import { useState } from "react";
 import { cn } from "@/lib/utils"; // if you don't have cn, just remove and inline className strings
 
 type Feature = string;
 type Plan = {
   id: string;
   name: string;
-  price: string;          // "$15.99"
+  price: string;          // "$15.99" or "€12.99" etc.
   cadence?: string;       // "1 Month"
   cta: string;            // "Order Now"
   href: string;           // "/checkout?plan=..."
@@ -28,7 +30,7 @@ const DEFAULT_PLANS: Plan[] = [
   {
     id: "1m",
     name: "1 Month",
-    price: "$15.99",
+    price: "€12.99",
     cadence: "1 Month",
     cta: "Order Now",
     href: "/checkout?plan=1m",
@@ -45,7 +47,7 @@ const DEFAULT_PLANS: Plan[] = [
   {
     id: "3m",
     name: "3 Months",
-    price: "$32.99",
+    price: "€29.99",
     cadence: "3 Months",
     cta: "Order Now",
     href: "/checkout?plan=3m",
@@ -62,7 +64,7 @@ const DEFAULT_PLANS: Plan[] = [
   {
     id: "12m",
     name: "12 Months",
-    price: "$69.99",
+    price: "€99.99",
     cadence: "12 Months",
     cta: "Order Now",
     href: "/checkout?plan=12m",
@@ -80,7 +82,7 @@ const DEFAULT_PLANS: Plan[] = [
   {
     id: "6m",
     name: "6 Months",
-    price: "$54.99",
+    price: "€54.99",
     cadence: "6 Months",
     cta: "Order Now",
     href: "/checkout?plan=6m",
@@ -96,12 +98,78 @@ const DEFAULT_PLANS: Plan[] = [
   },
 ];
 
+// --- helpers ---
+function monthsFromId(id: string): 1 | 3 | 6 | 12 {
+  if (id === "1m") return 1 as const;
+  if (id === "3m") return 3 as const;
+  if (id === "6m") return 6 as const;
+  return 12 as const;
+}
+function parsePrice(priceStr: string): { amount: number; currency: "EUR" | "USD" | "GBP" } {
+  // Detect common symbols, default to EUR to match Wise account
+  const trimmed = priceStr.trim();
+  let currency: "EUR" | "USD" | "GBP" = "EUR";
+  if (/^\$/.test(trimmed)) currency = "USD";
+  if (/^£/.test(trimmed)) currency = "GBP";
+  if (/^€/.test(trimmed)) currency = "EUR";
+
+  // Remove everything except digits/decimal
+  const amt = Number(trimmed.replace(/[^\d.]/g, "")) || 0;
+  return { amount: amt, currency };
+}
+
 export default function XtrmPricingSection({
   title = "Affordable Pricing for Xtream IPTV",
   subtitle = "Choose any of the following plans to get started. You can start with the 7 Days Trial first and upgrade anytime from your account.",
   plans = DEFAULT_PLANS,
   className,
 }: Props) {
+  const router = useRouter();
+  const [loadingIdx, setLoadingIdx] = useState<number | null>(null);
+
+  async function selectPlan(plan: Plan, idx: number) {
+    try {
+      setLoadingIdx(idx);
+
+      const { amount, currency } = parsePrice(plan.price);
+      const months = monthsFromId(plan.id);
+
+      // Build body expected by your /api/invoices POST
+      const body = {
+        currency,            // "EUR" to match Wise
+        months,              // optional, used server-side to normalize items/pricing if needed
+        items: [
+          { desc: `Subscription (${months} month${months > 1 ? "s" : ""})`, qty: 1, unit: amount },
+        ],
+      };
+
+      const r = await fetch("/api/invoices", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+
+      if (r.status === 401) {
+        // not authenticated → go login and return to pricing
+        router.push(`/login?next=${encodeURIComponent("/pricing")}`);
+        return;
+      }
+
+      const ct = r.headers.get("content-type") || "";
+      const data = ct.includes("application/json") ? await r.json() : { raw: await r.text() };
+      if (!r.ok || !data?.id) {
+        throw new Error(data?.message || "Failed to create invoice");
+      }
+
+      // success → go to invoice page
+      router.push(`/invoice/${data.id}`);
+    } catch (e: any) {
+      alert(e?.message || String(e));
+    } finally {
+      setLoadingIdx(null);
+    }
+  }
+
   return (
     <section className={cn("py-16 md:py-24", className)}>
       <div className="container mx-auto px-4">
@@ -122,13 +190,7 @@ export default function XtrmPricingSection({
         </motion.div>
 
         {/* Cards */}
-        <div
-          className={cn(
-            "mt-10 grid gap-6",
-            "sm:grid-cols-2",
-            "lg:grid-cols-4"
-          )}
-        >
+        <div className={cn("mt-10 grid gap-6", "sm:grid-cols-2", "lg:grid-cols-4")}>
           {plans.map((plan, idx) => (
             <motion.article
               key={plan.id}
@@ -140,14 +202,16 @@ export default function XtrmPricingSection({
               className={cn(
                 "group relative rounded-2xl border bg-card ring-1 ring-black/5",
                 "shadow-sm hover:shadow-xl transition-all duration-300",
-                plan.popular
-                  ? "bg-primary/5 border-primary/30"
-                  : "bg-background"
+                plan.popular ? "bg-primary/5 border-primary/30" : "bg-background"
               )}
             >
               {/* Spotlight hover */}
-              <div className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                   style={{ background: "radial-gradient(600px circle at var(--x,50%) var(--y,50%), hsl(var(--primary)/0.10), transparent 40%)" }}
+              <div
+                className="pointer-events-none absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                style={{
+                  background:
+                    "radial-gradient(600px circle at var(--x,50%) var(--y,50%), hsl(var(--primary)/0.10), transparent 40%)",
+                }}
               />
               {/* Popular badge */}
               {plan.popular && (
@@ -180,17 +244,18 @@ export default function XtrmPricingSection({
                 </div>
 
                 {/* CTA */}
-                <Link
-                  href={plan.href}
+                <button
+                  onClick={() => selectPlan(plan, idx)}
+                  disabled={loadingIdx !== null}
                   className={cn(
                     "inline-flex w-full items-center justify-center rounded-full",
                     "bg-foreground text-background font-semibold py-3",
-                    "transition-transform duration-200 hover:scale-[1.02] active:scale-95",
+                    "transition-transform duration-200 hover:scale-[1.02] active:scale-95 disabled:opacity-60",
                     plan.popular ? "bg-primary text-primary-foreground" : ""
                   )}
                 >
-                  {plan.cta.toUpperCase()}
-                </Link>
+                  {loadingIdx === idx ? "Creating invoice…" : plan.cta.toUpperCase()}
+                </button>
 
                 {/* Divider */}
                 <div className="my-5 border-t" />
@@ -208,6 +273,11 @@ export default function XtrmPricingSection({
                     </li>
                   ))}
                 </ul>
+
+                {/* (Optional) keep the original href for SEO/analytics */}
+                <div className="sr-only">
+                  <Link href={plan.href}>{plan.cta}</Link>
+                </div>
               </div>
             </motion.article>
           ))}

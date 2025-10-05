@@ -1,38 +1,38 @@
-import { useEffect, useState } from "react";
+"use client";
+
+import useSWR from "swr";
+
+type MeResp =
+  | { isLoggedIn: false }
+  | { isLoggedIn: true; user: { id: string; name: string; email: string }; onTrial: boolean };
+
+const fetcher = (url: string) =>
+  fetch(url, { credentials: "same-origin" }).then((r) => r.json());
 
 export function useAuthNav() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [onTrial, setOnTrial] = useState(false);
+  const { data, error, mutate, isLoading } = useSWR<MeResp>("/api/auth/me", fetcher, {
+    revalidateOnFocus: false,
+    shouldRetryOnError: false,
+  });
 
-  useEffect(() => {
-    let killed = false;
-    (async () => {
-      const t = Date.now(); // cache-buster
-      try {
-        const [meR, subR] = await Promise.all([
-          fetch(`/api/auth/me?t=${t}`, { cache: "no-store" }),
-          fetch(`/api/subscription/me?t=${t}`, { cache: "no-store" }),
-        ]);
-        if (!killed) {
-          setIsLoggedIn(meR.ok);
-          if (subR.ok) {
-            const sub = await subR.json();
-            setOnTrial(sub?.status === "trial");
-          } else {
-            setOnTrial(false);
-          }
-        }
-      } catch {
-        if (!killed) { setIsLoggedIn(false); setOnTrial(false); }
-      }
-    })();
-    return () => { killed = true; };
-  }, []);
+  const isLoggedIn = !!data && data.isLoggedIn === true;
+  const onTrial = isLoggedIn ? data.onTrial : false;
+  const user = isLoggedIn ? data.user : undefined;
 
-  const logout = async () => {
+  async function logout() {
     await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
-    location.reload(); // refresh the header
-  };
+    await mutate({ isLoggedIn: false }, { revalidate: false });
+    // optional redirect:
+    if (typeof window !== "undefined") window.location.href = "/";
+  }
 
-  return { isLoggedIn, onTrial, logout };
+  return {
+    isLoading,
+    isLoggedIn,
+    onTrial,
+    user,
+    logout,
+    error,
+    refresh: () => mutate(),
+  };
 }

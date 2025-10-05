@@ -1,14 +1,14 @@
 // src/pages/api/dashboard/account.ts
 import type { NextApiRequest, NextApiResponse } from "next";
 import { connectDB } from "@/lib/db";
-import { getUserIdFromReq } from "@/lib/auth";
+import { getUserIdFromReqLike  } from "@/lib/auth";
 import User from "@/models/User";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   if (req.method !== "GET") return res.status(405).json({ message: "Method not allowed" });
   try {
     await connectDB();
-    const uid = getUserIdFromReq(req);
+    const uid = getUserIdFromReqLike (req);
     if (!uid) return res.status(401).json({ message: "Not authenticated" });
 
     const u = await User.findById(uid)

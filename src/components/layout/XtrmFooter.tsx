@@ -8,7 +8,8 @@ import {
   Facebook, Twitter, Youtube, Instagram, Dribbble, Linkedin, Globe
 } from "lucide-react";
 import { cn } from "@/lib/utils"; // if not present, replace cn(...) with string joins
-
+import logo from "@/assets/logo/logo.png";
+import Image from "next/image";
 type NavCol = { title: string; links: { label: string; href: string }[] };
 
 const NAV: NavCol[] = [
@@ -87,9 +88,21 @@ export default function XtrmFooter({
               transition={{ duration: 0.45 }}
               className="max-w-sm"
             >
-              <Link href="/" className="inline-flex items-center">
-                <div className="rounded-xl bg-primary px-4 py-2 text-primary-foreground font-extrabold tracking-[0.25em]">XTREAM</div>
-              </Link>
+              <div className="flex items-center gap-4">
+                <Link href="/" className="flex items-center gap-2 group" aria-label="XtreamTV Home">
+                  <div className="relative h-7 w-7 overflow-hidden rounded-lg ring-2 ring-white/10">
+                    <Image
+                      src={logo}
+                      alt="XtreamTV"
+                      fill
+                      sizes="28px"
+                      className="object-cover"
+                      priority
+                    />
+                  </div>
+                </Link>
+                {/* You may want to close this div here if it was opened for layout purposes */}
+              </div>
 
               <p className="mt-4 text-sm text-muted-foreground">
                 XtrmIPTV brings premium live TV, sports, movies and EPG to every device with instant activation.
