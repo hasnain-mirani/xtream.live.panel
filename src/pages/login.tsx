@@ -65,10 +65,10 @@ export default function LoginPage() {
         <meta name="description" content="Sign in to your XtrmIPTV account." />
       </Head>
 
-      <main className="min-h-screen grid place-items-center px-4 py-10 bg-gradient-to-b from-gray-50 to-white">
+      <main className="min-h-screen grid place-items-center px-4 py-10 bg-neon">
         <div className="w-full max-w-md">
           {/* Card */}
-          <div className="rounded-2xl border bg-white/70 backdrop-blur p-6 shadow-sm ring-1 ring-black/5">
+          <div className="rounded-2xl border bg-gray-500 backdrop-blur p-6 shadow-sm ring-1 ring-black/5">
             <div className="text-center">
               <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-black text-white font-bold">XI</div>
               <h1 className="text-2xl font-bold tracking-tight">Welcome back</h1>
@@ -162,9 +162,9 @@ export default function LoginPage() {
 
               {/* Divider */}
               <div className="flex items-center gap-3 text-xs text-gray-400">
-                <div className="h-px flex-1 bg-gray-200" />
+                <div className="h-px flex-1 bg-blend-color" />
                 or
-                <div className="h-px flex-1 bg-gray-200" />
+                <div className="h-px flex-1 bg-blend-color" />
               </div>
 
               {/* Secondary actions */}

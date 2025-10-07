@@ -21,8 +21,8 @@ const emailOk = (v: string) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 export default function ContactSection({
   address = "2750 Quadra Street Victoria Road, Los Angeles, United States",
   email = "support@xtremetv.live",
-  phone = " +44 7449275072",
-  whatsapp = " +44 7449275072",
+  phone = " +44 7365254030",
+  whatsapp = " +44 7365254030",
   className,
 }: {
   address?: string; email?: string; phone?: string; whatsapp?: string; className?: string;

@@ -1,37 +1,47 @@
-// pages/api/auth/reset.ts
-import type { NextApiRequest, NextApiResponse } from "next";
-import crypto from "crypto";
-import bcrypt from "bcryptjs";
-import { connectDB as dbConnect } from "@/lib/db";
-import User from "@/models/User";
+// src/pages/auth/reset.tsx (minimal shape)
+import { useRouter } from "next/router";
+import { useState } from "react";
 
-export default async function handler(req: NextApiRequest, res: NextApiResponse) {
-  if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
+export default function ResetPage() {
+  const router = useRouter();
+  const { token = "", uid = "" } = router.query as { token?: string; uid?: string };
 
-  const { email, token, password } = req.body || {};
-  if (!email || !token || !password) return res.status(400).json({ error: "Missing fields" });
-  if (String(password).length < 8) return res.status(400).json({ error: "Password too short" });
+  const [email, setEmail] = useState("");       // or prefill if you include it in the reset link
+  const [password, setPassword] = useState("");
+  const [pending, setPending] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  const [ok, setOk] = useState(false);
 
-  await dbConnect();
-
-  const user = await User.findOne({ email: String(email).toLowerCase() });
-  if (!user?.passwordResetTokenHash || !user.passwordResetExpiresAt) {
-    return res.status(400).json({ error: "Invalid or expired token" });
+  async function onSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setPending(true); setErr(null);
+    try {
+      const r = await fetch("/api/auth/reset", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, token, password }),
+      });
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok) throw new Error(j?.error || "Reset failed");
+      setOk(true);
+    } catch (e: any) {
+      setErr(e?.message || "Error");
+    } finally {
+      setPending(false);
+    }
   }
-  if (user.passwordResetExpiresAt.getTime() < Date.now()) {
-    return res.status(400).json({ error: "Token expired" });
-  }
 
-  const hash = crypto.createHash("sha256").update(String(token)).digest("hex");
-  if (hash !== user.passwordResetTokenHash) {
-    return res.status(400).json({ error: "Invalid token" });
-  }
-
-  // All good → update password & clear reset fields
-  user.passwordHash = await bcrypt.hash(String(password), 10);
-  user.passwordResetTokenHash = null;
-  user.passwordResetExpiresAt = null;
-  await user.save();
-
-  return res.status(200).json({ ok: true });
+  return (
+    <main>
+      <form onSubmit={onSubmit}>
+        <input value={email} onChange={(e)=>setEmail(e.target.value)} placeholder="Email" />
+        <input value={password} onChange={(e)=>setPassword(e.target.value)} placeholder="New password" type="password" />
+        <button disabled={pending}>{pending ? "Resetting…" : "Reset password"}</button>
+        {ok && <p>Password updated.</p>}
+        {err && <p>{err}</p>}
+      </form>
+    </main>
+  );
 }
+
+export const getServerSideProps = async () => ({ props: {} }); // avoid SSG build error

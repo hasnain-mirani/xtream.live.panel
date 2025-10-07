@@ -114,7 +114,7 @@ export default function XtrmFooter({
                   <Mail className="h-4 w-4" /> support@xtremetv.live
                 </a>
                 <a href="tel:+1234567890" className="flex items-center gap-2 hover:text-foreground">
-                  <Phone className="h-4 w-4" /> +44 7449275072    
+                  <Phone className="h-4 w-4" /> +44 7365254030    
                 </a>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Clock className="h-4 w-4" /> 24/7 Live Chat & Tickets

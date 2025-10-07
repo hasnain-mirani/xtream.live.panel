@@ -96,7 +96,7 @@ export default function InvoiceHistory({ page, limit, total, items }: Props) {
       <div className="container mx-auto px-4 py-8">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-extrabold">Invoices</h1>
-          <Link href="/dashboard" className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50">
+          <Link href="/dashboard" className="rounded-md border px-3 py-1.5 text-sm hover:bg-indigo-800">
             Back to dashboard
           </Link>
         </div>
@@ -104,7 +104,7 @@ export default function InvoiceHistory({ page, limit, total, items }: Props) {
         {items.length === 0 ? (
           <p className="mt-6 text-sm text-gray-600">No invoices yet.</p>
         ) : (
-          <div className="mt-6 overflow-x-auto rounded-xl border bg-white">
+          <div className="mt-6 overflow-x-auto rounded-xl border bg-backdrop-blur">
             <table className="min-w-full text-sm">
               <thead className="bg-gray-50 text-gray-500">
                 <tr>
@@ -138,12 +138,12 @@ export default function InvoiceHistory({ page, limit, total, items }: Props) {
                           href={`/api/invoices/${it.id}/pdf`}
                           target="_blank"
                           rel="noreferrer"
-                          className="rounded-md border px-2 py-1 hover:bg-gray-50"
+                          className="rounded-md border px-2 py-1 hover:bg-indigo-800"
                         >
                           PDF
                         </a>
                         <button
-                          className="rounded-md border px-2 py-1 hover:bg-gray-50"
+                          className="rounded-md border px-2 py-1 hover:bg-indigo-800"
                           onClick={async () => {
                             await fetch(`/api/invoices/${it.id}/email`, { method: "POST" });
                             alert("Invoice email sent");
@@ -153,19 +153,19 @@ export default function InvoiceHistory({ page, limit, total, items }: Props) {
                         </button>
                         <Link
                           href={`/invoice/${it.id}`}
-                          className="rounded-md border px-2 py-1 hover:bg-gray-50"
+                          className="rounded-md border px-2 py-1 hover:bg-indigo-800"
                         >
                           View
                         </Link>
                            <Link
                           href={`/invoice/${it.id}`}
-                          className="rounded-md border px-2 py-1 hover:bg-gray-50"
+                          className="rounded-md border px-2 py-1 hover:bg-indigo-800"
                         >
                           Delete
                         </Link>   
                          <Link
                           href={`/invoice/${it.id}`}
-                          className="rounded-md border px-2 py-1 hover:bg-gray-50"
+                          className="rounded-md border px-2 py-1 hover:bg-indigo-800"
                         >
                           Change Plan
                         </Link>
@@ -216,7 +216,7 @@ function PageBtn({ href, disabled, children }: { href: string; disabled?: boolea
     return <span className="rounded-md border px-3 py-1.5 text-sm text-gray-400">{children}</span>;
   }
   return (
-    <Link href={href} className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50">
+    <Link href={href} className="rounded-md border px-3 py-1.5 text-sm hover:bg-indigo-800">
       {children}
     </Link>
   );

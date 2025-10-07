@@ -3,7 +3,7 @@ import jwt from "jsonwebtoken";
 import cookie from "cookie";
 import { connectDB } from "@/lib/db";
 import User from "@/models/User";
-import Subscription from "@/models/Subscription"; // if you have it
+import {Subscription} from "@/models/Subscription"; // if you have it
 
 type Resp =
   | { isLoggedIn: false }

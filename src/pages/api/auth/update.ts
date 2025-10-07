@@ -1,7 +1,7 @@
 
 import type { NextApiRequest, NextApiResponse } from "next";
 import { connectDB } from "@/lib/db";
-import { User } from "@/models/User";
+import  User  from "@/models/User";
 import { getUserFromReq } from "@/lib/jwt";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {

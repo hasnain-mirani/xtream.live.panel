@@ -93,7 +93,7 @@ export default function InvoicePage({ invoice }: Props) {
       <>
         <Head><title>Invoice — Not found</title></Head>
         <div className="container mx-auto px-4 py-10">
-          <div className="rounded-xl border bg-white p-6">
+          <div className="rounded-xl border bg-blend-color p-6">
             <h1 className="text-xl font-bold">Invoice not found</h1>
             <p className="mt-2 text-sm text-gray-600">
               The invoice may not exist or you don’t have access.
@@ -198,7 +198,7 @@ function InvoiceView({ invoice }: { invoice: ServerInvoice }) {
         </div>
 
         {/* Items */}
-        <div className="mt-6 rounded-xl border bg-white p-5">
+        <div className="mt-6 rounded-xl border bg-blend-color p-5">
           <h2 className="text-lg font-semibold mb-3">Items</h2>
           <table className="w-full text-sm">
             <thead>
@@ -243,7 +243,7 @@ function InvoiceView({ invoice }: { invoice: ServerInvoice }) {
           </div>
         </div>
 {invoice.status === "PENDING" && invoice.amount > 0 && (
-  <div className="mt-6 rounded-2xl border bg-white p-5">
+  <div className="mt-6 rounded-2xl border bg-blend-color p-5">
     <h2 className="text-lg font-semibold">💳 Bank Payment Details</h2>
     <div className="mt-2 text-sm">
       <p><b>Account Holder:</b> {BANK.accountHolder}</p>
@@ -255,17 +255,17 @@ function InvoiceView({ invoice }: { invoice: ServerInvoice }) {
       <p><b>Can Receive From:</b> {BANK.canReceive}</p>
     </div>
 
-    <div className="mt-4 rounded-md bg-gray-50 border p-3 text-sm whitespace-pre-line">
+    <div className="mt-4 rounded-md bg-blend-color border p-3 text-sm whitespace-pre-line">
       {PAYMENT_NOTE}
     </div>
 
-    <div className="mt-3 text-xs text-gray-600">
+    <div className="mt-3 text-xs text-green-50">
       Use your invoice number <b>{invoice.invoiceNo}</b> as the payment reference.
     </div>
   </div>
 )}
         {/* Manage: change due date & delete */}
-        <div className="mt-6 rounded-2xl border bg-white p-5">
+        <div className="mt-6 rounded-2xl border bg-blend-color p-5">
           <h2 className="text-lg font-semibold">Manage</h2>
 
           <div className="mt-4 grid gap-2 sm:grid-cols-[260px,auto] sm:items-end">
@@ -300,10 +300,10 @@ function InvoiceView({ invoice }: { invoice: ServerInvoice }) {
 
         {/* Footer nav */}
         <div className="mt-6">
-          <Link href="/invoice/history" className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50">
+          <Link href="/invoice/history" className="rounded-md border px-3 py-1.5 text-sm hover:bg-indigo-300">
             Back to invoices
           </Link>
-          <Link href="/dashboard" className="ml-2 rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50">
+          <Link href="/dashboard" className="ml-2 rounded-md border px-3 py-1.5 text-sm hover:bg-indigo-300">
             Back to Dashboard
           </Link>
         </div>
@@ -314,7 +314,7 @@ function InvoiceView({ invoice }: { invoice: ServerInvoice }) {
 
 function Row({ k, v }: { k: string; v: string }) {
   return (
-    <div className="rounded-xl border bg-gray-50 p-3">
+    <div className="rounded-xl border bg-blend-color p-3">
       <div className="text-xs uppercase text-gray-500">{k}</div>
       <div className="text-sm font-medium">{v}</div>
     </div>

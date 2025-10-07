@@ -89,12 +89,12 @@ export default function CreateInvoicePage() {
             </select>
           </label>
 
-          <div className="rounded-lg border bg-gray-50 p-3 text-sm">
+          <div className="rounded-lg border bg-black p-3 text-sm">
             <div><b>Plan:</b> {months} month{months > 1 ? "s" : ""}</div>
             <div><b>Price:</b> {currency} {price.toFixed(2)}</div>
           </div>
  <div className="mt-6">
-            <Link href="/dashboard" className="rounded-md border px-3 py-1.5 text-sm hover:bg-gray-50">
+            <Link href="/dashboard" className="rounded-md border px-3 py-1.5 text-sm hover:bg-indigo-800">
               Back to Dashboard
             </Link>
         </div>

@@ -5,6 +5,7 @@ import {
 } from "@/lib/emailTemplates";
 
 const unsub = (email: string) => `${env.UNSUBSCRIBE_URL_BASE}${encodeURIComponent(email)}`;
+if (typeof window !== "undefined") throw new Error("emailService is server-only");
 
 // ========== Public API your app can call ==========
 export async function emailWelcome(to: string, name: string, trialEnd?: Date) {

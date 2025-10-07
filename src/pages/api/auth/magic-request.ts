@@ -1,6 +1,6 @@
 import type { NextApiRequest, NextApiResponse } from "next";
 import { connectDB } from "@/lib/db";
-import { User } from "@/models/User";
+import User  from "@/models/User";
 import { EmailToken } from "@/models/EmailToken";
 import { randomToken } from "@/lib/token";
 import { sendMail } from "@/lib/mailer";
@@ -16,6 +16,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const expiresAt = new Date(Date.now()+10*60*1000);
   await EmailToken.create({ userId: String(user._id), kind: "magic", token, expiresAt, used: false });
   const link = `${process.env.APP_URL}/auth/magic?token=${token}`;
-  await sendMail(email, "Magic Login", `<p>Click to login: <a href="${link}">${link}</a></p>`);
+  await sendMail({
+    to: email,
+    subject: "Magic Login",
+    html: `<p>Click to login: <a href="${link}">${link}</a></p>`
+  });
   return res.json({ ok: true });
 }

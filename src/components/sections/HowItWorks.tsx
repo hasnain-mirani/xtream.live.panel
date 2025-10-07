@@ -30,7 +30,7 @@ export default function HowItWorks() {
           <div className="rounded-2xl border bg-card ring-1 ring-black/5 shadow-xl overflow-hidden">
             <div className="relative aspect-[4/3] w-full">
               <Image
-                src="/images/how-it-works.jpg"  // replace with your asset
+                src="/assets/iptv.jpg"
                 alt="Watching TV"
                 fill
                 className="object-cover"

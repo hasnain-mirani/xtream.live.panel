@@ -1,9 +1,6 @@
 import nodemailer, { type Transporter } from "nodemailer";
 import { env } from "./env";
-// src/lib/mailer.ts
-import "server-only";        // <— ensures server-only usage
 
-// ...
 
 let _tx: Transporter | null = null;
 
@@ -47,7 +44,7 @@ export async function sendMail({ to, subject, html, text, replyTo }: SendArgs) {
     headers,
   });
 }
-
+export { createTx as makeTransport };
 // quick health check (optional)
 export async function verifySmtp() {
   const tx = mailer();

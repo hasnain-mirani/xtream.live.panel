@@ -45,7 +45,7 @@ export default function Equipment() {
           <div className="rounded-2xl border bg-card ring-1 ring-black/5 shadow-xl overflow-hidden">
             <div className="relative aspect-[16/9] w-full">
               <Image
-                src="/images/devices.png"  // replace with your asset
+                src="/assets/devices.png"
                 alt="Devices"
                 fill
                 className="object-contain md:object-cover"

@@ -2,7 +2,7 @@ import type { NextApiRequest, NextApiResponse } from "next";
 import { getUserFromReq } from "@/lib/jwt";
 import { connectDB } from "@/lib/db";
 import { Subscription } from "@/models/Subscription";
-import { Channel } from "@/models/Channel";
+import  Channel  from "@/models/Channel";
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
   await connectDB();

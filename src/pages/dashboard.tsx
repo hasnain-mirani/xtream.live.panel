@@ -101,87 +101,106 @@ export default function Dashboard({ user, latestInvoice }: { user: ServerUser; l
         <meta name="description" content="Your XtreamIPTV account dashboard." />
       </Head>
 
-      {/* Mobile bar (open/close sidebar) */}
-      <div className="lg:hidden mb-4">
-        <button
-          className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10"
-          onClick={() => setMobileOpen((s) => !s)}
-          aria-label="Toggle sidebar"
-        >
-          {mobileOpen ? "Hide menu" : "Show menu"}
-        </button>
-      </div>
+      {/* Wrapper: new stacking context prevents glass/blur bleed & overlap */}
+      <div className="relative isolate min-h-[70vh] bg-neon">
+        {/* Mobile bar (open/close sidebar) */}
+        <div className="lg:hidden mb-4">
+          <button
+            className="inline-flex items-center gap-2 rounded-xl border border-white/10 bg-white/5 px-3 py-2 text-sm hover:bg-white/10"
+            onClick={() => setMobileOpen((s) => !s)}
+            aria-label="Toggle sidebar"
+          >
+            {mobileOpen ? "Hide menu" : "Show menu"}
+          </button>
+        </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-[260px,1fr] gap-6">
-        {/* SIDEBAR */}
-        <Sidebar open={mobileOpen} />
+        {/* Mobile overlay: blocks scroll/taps behind the glass */}
+        {mobileOpen && (
+          <div
+            className="fixed inset-0 z-40 bg-black/50 backdrop-blur-sm lg:hidden"
+            onClick={() => setMobileOpen(false)}
+          />
+        )}
 
-        {/* MAIN */}
-        <main className="pb-12">
-          {/* Greeting + actions */}
-          <div className="flex flex-wrap items-end justify-between gap-3">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight text-white">
-                Welcome{user.name ? `, ${user.name}` : ""} 👋
-              </h1>
-              <p className="text-sm text-white/70">
-                Manage your subscription, invoices, and device credentials.
+        <div className="grid grid-cols-1 lg:grid-cols-[260px,1fr] gap-6">
+          {/* SIDEBAR above overlay */}
+          <div className="relative z-50 lg:z-auto">
+            <Sidebar open={mobileOpen} />
+          </div>
+
+          {/* MAIN below overlay */}
+          <main className="relative z-0 pb-12">
+            {/* Greeting + actions */}
+            <div className="flex flex-wrap items-end justify-between gap-3">
+              <div>
+                <h1 className="text-2xl md:text-3xl font-extrabold tracking-tight neon">
+                  Welcome{user.name ? `, ${user.name}` : ""} 👋
+                </h1>
+                <p className="text-sm text-white/70">
+                  Manage your subscription, invoices, and device credentials.
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/channels"
+                  className="btn-neon-ghost"
+                >
+                  Explore Channels
+                </Link>
+                <Link
+                  href="/pricing"
+                  className="btn-neon"
+                >
+                  Upgrade plan
+                </Link>
+              </div>
+            </div>
+
+            {/* KPI Cards */}
+            <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              <StatCard label="Account" value={user.isActive ? "Active" : "Pending"} tone={user.isActive ? "ok" : "warn"} />
+              <StatCard label="Username" value={user.serviceUsername || "—"} />
+              <StatCard label="Latest Invoice" value={latestInvoice ? latestInvoice.invoiceNo : "—"} />
+              <StatCard
+                label="Amount Due"
+                value={
+                  !latestInvoice
+                    ? "—"
+                    : latestInvoice.amount === 0
+                    ? "Free"
+                    : money(latestInvoice.amount, latestInvoice.currency)
+                }
+              />
+            </div>
+
+            {/* Panels */}
+            <div className="mt-6 grid gap-6 lg:grid-cols-3">
+              {/* Latest Invoice */}
+              <div className="lg:col-span-2">
+                <LatestInvoiceCard inv={latestInvoice} />
+              </div>
+
+              {/* Quick Start / Help */}
+              <QuickStartCard />
+            </div>
+
+            {/* Explore */}
+            <section className="mt-6 card-neon neon-border">
+              <div className="flex flex-wrap items-center justify-between gap-3">
+                <h2 className="text-lg font-semibold neon">Explore the catalog</h2>
+                <Link
+                  href="/channels"
+                  className="btn-neon"
+                >
+                  Browse Channels
+                </Link>
+              </div>
+              <p className="mt-2 text-sm text-white/70">
+                Sports, Movies, News, Kids, and more—updated frequently. Filter by country/genre.
               </p>
-            </div>
-            <div className="flex items-center gap-2">
-              <Link href="/channels" className="rounded-md border border-white/10 bg-white/5 px-3 py-1.5 text-sm hover:bg-white/10">
-                Explore Channels
-              </Link>
-              <Link href="/pricing" className="rounded-md bg-gradient-to-r from-rose-500 to-indigo-500 px-3 py-1.5 text-sm font-medium text-white hover:brightness-110">
-                Upgrade plan
-              </Link>
-            </div>
-          </div>
-
-          {/* KPI Cards */}
-          <div className="mt-6 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Account" value={user.isActive ? "Active" : "Pending"} tone={user.isActive ? "ok" : "warn"} />
-            <StatCard label="Username" value={user.serviceUsername || "—"} />
-            <StatCard label="Latest Invoice" value={latestInvoice ? latestInvoice.invoiceNo : "—"} />
-            <StatCard
-              label="Amount Due"
-              value={
-                !latestInvoice
-                  ? "—"
-                  : latestInvoice.amount === 0
-                  ? "Free"
-                  : money(latestInvoice.amount, latestInvoice.currency)
-              }
-            />
-          </div>
-
-          {/* Panels */}
-          <div className="mt-6 grid gap-6 lg:grid-cols-3">
-            {/* Latest Invoice */}
-            <div className="lg:col-span-2">
-              <LatestInvoiceCard inv={latestInvoice} />
-            </div>
-
-            {/* Quick Start / Help */}
-            <QuickStartCard />
-          </div>
-
-          {/* Explore */}
-          <section className="mt-6 rounded-2xl border border-white/10 bg-white/5 p-5">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-white">Explore the catalog</h2>
-              <Link
-                href="/channels"
-                className="rounded-md bg-gradient-to-r from-rose-500 to-indigo-500 px-3 py-1.5 text-sm font-medium text-white hover:brightness-110"
-              >
-                Browse Channels
-              </Link>
-            </div>
-            <p className="mt-2 text-sm text-white/70">
-              Sports, Movies, News, Kids, and more—updated frequently. Filter by country/genre.
-            </p>
-          </section>
-        </main>
+            </section>
+          </main>
+        </div>
       </div>
     </SiteLayout>
   );

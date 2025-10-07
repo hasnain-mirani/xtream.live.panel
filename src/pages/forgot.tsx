@@ -39,9 +39,9 @@ export default function ForgotPage() {
         <meta name="description" content="Reset your XtrmIPTV password." />
       </Head>
 
-      <main className="min-h-screen grid place-items-center px-4 py-10 bg-gradient-to-b from-gray-50 to-white">
+      <main className="min-h-screen grid place-items-center px-4 py-10 bg-neon">
         <div className="w-full max-w-md">
-          <div className="rounded-2xl border bg-white/70 backdrop-blur p-6 shadow-sm ring-1 ring-black/5">
+          <div className="rounded-2xl border bg-gray-500 backdrop-blur p-6 shadow-sm ring-1 ring-black/5">
             <div className="text-center">
               <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-black text-white font-bold">XI</div>
               <h1 className="text-2xl font-bold tracking-tight">Forgot your password?</h1>
