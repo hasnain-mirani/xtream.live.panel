@@ -6,10 +6,10 @@ import Link from "next/link";
 
 // Your price table (edit as needed)
 const PRICING_GBP: Record<number, number> = {
-  1: 9.99,
-  3: 27.99,
-  6: 49.99,
-  12: 89.99,
+  1: 10.99,
+  3: 20.99,
+  6: 30.99,
+  12: 50.99,
 };
 
 export default function CreateInvoicePage() {

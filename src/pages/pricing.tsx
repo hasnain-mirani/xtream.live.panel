@@ -21,7 +21,7 @@ export default function PricingPage() {
             id: "1m",
             name: "1 Month",
             cadence: "1 Month",
-            price: "$15.99",
+            price: "€10.99",
             cta: "Order Now",
             href: "/checkout?plan=1m",
             features: [
@@ -38,7 +38,7 @@ export default function PricingPage() {
             id: "3m",
             name: "3 Months",
             cadence: "3 Months",
-            price: "$32.99",
+            price: "€20.99",
             cta: "Order Now",
             href: "/checkout?plan=3m",
             features: [
@@ -55,7 +55,7 @@ export default function PricingPage() {
             id: "12m",
             name: "12 Months",
             cadence: "12 Months",
-            price: "$69.99",
+            price: "€50.99",
             cta: "Order Now",
             href: "/checkout?plan=12m",
             popular: true,
@@ -73,7 +73,7 @@ export default function PricingPage() {
             id: "6m",
             name: "6 Months",
             cadence: "6 Months",
-            price: "$54.99",
+            price: "€30.99",
             cta: "Order Now",
             href: "/checkout?plan=6m",
             features: [

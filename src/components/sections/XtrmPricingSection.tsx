@@ -30,7 +30,7 @@ const DEFAULT_PLANS: Plan[] = [
   {
     id: "1m",
     name: "1 Month",
-    price: "€12.99",
+    price: "€10.99",
     cadence: "1 Month",
     cta: "Order Now",
     href: "/checkout?plan=1m",
@@ -47,7 +47,7 @@ const DEFAULT_PLANS: Plan[] = [
   {
     id: "3m",
     name: "3 Months",
-    price: "€29.99",
+    price: "€20.99",
     cadence: "3 Months",
     cta: "Order Now",
     href: "/checkout?plan=3m",
@@ -64,7 +64,7 @@ const DEFAULT_PLANS: Plan[] = [
   {
     id: "12m",
     name: "12 Months",
-    price: "€99.99",
+    price: "€50.99",
     cadence: "12 Months",
     cta: "Order Now",
     href: "/checkout?plan=12m",
@@ -82,7 +82,7 @@ const DEFAULT_PLANS: Plan[] = [
   {
     id: "6m",
     name: "6 Months",
-    price: "€54.99",
+    price: "€40.99",
     cadence: "6 Months",
     cta: "Order Now",
     href: "/checkout?plan=6m",

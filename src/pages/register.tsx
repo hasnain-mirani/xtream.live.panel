@@ -14,9 +14,9 @@ type FormState = {
 // GBP prices (adjust as you like)
 const PLANS: Record<PlanKey, { label: string; amount: number; interval: string }> = {
   trial:     { label: "Free Trial (1 days)", amount: 0,      interval: "wk" },
-  monthly:   { label: "Monthly",             amount: 19.99,  interval: "mo" },
-  quarterly: { label: "Quarterly",           amount: 49.99,  interval: "qtr" },
-  yearly:    { label: "Yearly",              amount: 169.00, interval: "yr" },
+  monthly:   { label: "Monthly",             amount: 10.99,  interval: "mo" },
+  quarterly: { label: "Quarterly",           amount: 20.99,  interval: "qtr" },
+  yearly:    { label: "Yearly",              amount: 50.99, interval: "yr" },
 };
 
 const CURRENCY = "GBP";
